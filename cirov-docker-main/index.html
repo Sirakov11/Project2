@@ -1,0 +1,193 @@
+<html>
+  <head>
+    <title>Node.js Application</title>
+    <style>
+        body{
+            background: linear-gradient(90deg, rgba(161,35,35,1) 0%, rgba(0,0,0,1) 32%, rgba(0,0,0,1) 65%, rgba(144,34,34,1) 100%);
+            color: white;
+        }
+        .content{
+            width: 80%;
+            margin: auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.451);
+            border-radius: 8px;
+        }
+        .left{
+            width: 40%;  
+            height: 50%;  
+            margin-left: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: rgba(189, 23, 23, 0.645);
+            border-radius: 8px;
+        }
+        .right{
+            width: 40%;    
+            height: 50%;  
+            margin-right: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: rgba(189, 23, 23, 0.645);
+            border-radius: 8px;
+        }
+        .top{
+            width: 30%;    
+            height: 100%;  
+            display: flex;
+            flex-direction: column;
+        }
+        .bottom{
+            width: 30%;    
+            height: 100%;  
+            display: flex;
+            flex-direction: column;
+        }
+        button{
+            cursor: pointer;
+            width: 100%;
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.759);
+            border: 1px solid black;
+            color: white;
+            border-radius: 5px;
+            margin-top: 10px;
+            transition: 0.2s linear;
+        }
+        button:hover{
+            background-color: rgba(54, 54, 54, 0.759);
+            transition: 0.2s linear;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+        <div class="left">
+            <div class="top">
+                <h2>Create User</h2>
+                <form id="createUserForm">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required><br>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required><br>
+                <button type="submit">Create User</button>
+                </form>
+            </div>
+
+            <div class="bottom">
+                <h1>User List</h1>
+                <button id="showUsersButton">Refresh Users</button>
+                <div id="userList">
+                </div>
+            </div>
+        </div>
+
+        <div class="right">
+            <div class="top">
+                <h2>Queue Messages</h2>
+                <form id="queueMessagesForm">
+                <label for="message">Message:</label>
+                <input type="text" id="message" name="message" required><br>
+                <button type="submit">Queue Message</button>
+                </form>
+            </div>
+
+            <div class="bottom">
+                <h2>Pop Messages</h2>
+                <button id="popMessagesBtn">Pop Message</button>
+                <div id="popMessagesResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      const createUserForm = document.getElementById('createUserForm');
+      const queueMessagesForm = document.getElementById('queueMessagesForm');
+      const popMessagesBtn = document.getElementById('popMessagesBtn');
+      const popMessagesResult = document.getElementById('popMessagesResult');
+
+      createUserForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+
+        try {
+          const response = await fetch('/create-user', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, email }),
+          });
+
+          const result = await response.json();
+          alert(result.message);
+        } catch (error) {
+          console.error('Error creating user:', error.message);
+        }
+      });
+
+      queueMessagesForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const message = document.getElementById('message').value.trim();
+
+        try {
+          const response = await fetch('/insert-message', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message }),
+          });
+
+          const result = await response.json();
+          alert(result.message);
+        } catch (error) {
+          console.error('Error queuing message:', error.message);
+        }
+      });
+
+      popMessagesBtn.addEventListener('click', async () => {
+        try {
+          const response = await fetch('/pop');
+          const result = await response.json();
+
+          if (result.message === 'Queue is empty') {
+            alert(result.message);
+          } else {
+            popMessagesResult.textContent = `Popped message: ${result.content}`;
+          }
+        } catch (error) {
+          console.error('Error popping message:', error.message);
+        }
+      });
+
+      function fetchAndDisplayUsers() {
+            fetch('/show-users')
+                .then(response => response.json())
+                .then(users => {
+                    const userListDiv = document.getElementById('userList');
+
+                    if (users.length > 0) {
+                        const userListHTML = users.map(user => `<p>${user.username} - ${user.email}</p>`).join('');
+                        userListDiv.innerHTML = userListHTML;
+                    } else {
+                        userListDiv.innerHTML = '<p>No users found</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching users:', error);
+                });
+        }
+
+        const showUsersButton = document.getElementById('showUsersButton');
+        showUsersButton.addEventListener('click', fetchAndDisplayUsers);
+    </script>
+  </body>
+</html>
